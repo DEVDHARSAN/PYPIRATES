@@ -1,3 +1,4 @@
+// v2 - demo accounts removed from login page
 import express from "express";
 import cookieParser from "cookie-parser";
 import bcrypt from "bcryptjs";
