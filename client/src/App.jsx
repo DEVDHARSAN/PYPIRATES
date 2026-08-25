@@ -62,7 +62,32 @@ const sentimentColor = (s) => (s === "NEGATIVE" ? palette.red : s === "POSITIVE"
 const priorityColor = (p) => ({ CRITICAL: palette.red, HIGH: "#FF8A5C", MEDIUM: palette.amber, LOW: palette.green }[p] || palette.amber);
 const statusLabel = { SUBMITTED: "Submitted", UNDER_REVIEW: "Under Review", IN_PROGRESS: "In Progress", RESOLVED: "Resolved" };
 const statusColor = (s) => ({ SUBMITTED: "#8B93A7", UNDER_REVIEW: palette.amber, IN_PROGRESS: palette.blue, RESOLVED: palette.green }[s]);
-const DEPARTMENTS = ["Computer Science", "Electronics", "Mechanical", "Information Technology", "Civil Engineering", "Biotechnology"];
+const DEPARTMENTS = [
+  "Computer Science",
+  "Computer Science & Engineering",
+  "Information Technology",
+  "Electronics & Communication Engineering",
+  "Electrical & Electronics Engineering",
+  "Mechanical Engineering",
+  "Civil Engineering",
+  "Aerospace Engineering",
+  "Chemical Engineering",
+  "Biotechnology",
+  "Biomedical Engineering",
+  "Artificial Intelligence & Machine Learning",
+  "Data Science",
+  "Robotics & Automation",
+  "Marine Engineering",
+  "Agricultural Engineering",
+  "Environmental Engineering",
+  "Physics",
+  "Chemistry",
+  "Mathematics",
+  "Commerce",
+  "Business Administration (MBA)",
+  "Arts & Humanities",
+  "Others",
+];
 
 function Badge({ children, color, subtle }) {
   return (
@@ -506,14 +531,17 @@ function LoginPage({ go, doLogin }) {
 
 function RegisterPage({ go, doRegister }) {
   const [form, setForm] = useState({ name: "", email: "", password: "", confirm: "", department: DEPARTMENTS[0], year: "1" });
+  const [customDept, setCustomDept] = useState("");
   const [err, setErr] = useState(""); const [loading, setLoading] = useState(false);
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
   const submit = async (e) => {
     e.preventDefault(); setErr("");
+    if (form.department === "Others" && !customDept.trim()) return setErr("Please specify your department.");
     if (form.password.length < 6) return setErr("Password must be at least 6 characters.");
     if (form.password !== form.confirm) return setErr("Passwords do not match.");
     setLoading(true);
-    const res = await doRegister(form);
+    const finalForm = { ...form, department: form.department === "Others" ? customDept.trim() : form.department };
+    const res = await doRegister(finalForm);
     setLoading(false);
     if (!res.ok) setErr(res.error);
   };
@@ -523,9 +551,25 @@ function RegisterPage({ go, doRegister }) {
         <Field label="Full Name"><input style={inputStyle} required value={form.name} onChange={set("name")} placeholder="Aditi Sharma" /></Field>
         <Field label="College Email"><input style={inputStyle} type="email" required value={form.email} onChange={set("email")} placeholder="you@pypirates.edu" /></Field>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-          <Field label="Department"><select style={inputStyle} value={form.department} onChange={set("department")}>{DEPARTMENTS.map((d) => <option key={d}>{d}</option>)}</select></Field>
+          <Field label="Department">
+            <select style={inputStyle} value={form.department} onChange={set("department")}>
+              {DEPARTMENTS.map((d) => <option key={d}>{d}</option>)}
+            </select>
+          </Field>
           <Field label="Year"><select style={inputStyle} value={form.year} onChange={set("year")}>{[1, 2, 3, 4].map((y) => <option key={y} value={y}>{y}</option>)}</select></Field>
         </div>
+        {form.department === "Others" && (
+          <Field label="Specify your department">
+            <input
+              style={inputStyle}
+              required
+              value={customDept}
+              onChange={(e) => setCustomDept(e.target.value)}
+              placeholder="e.g. Fashion Technology"
+              autoFocus
+            />
+          </Field>
+        )}
         <Field label="Password"><input style={inputStyle} type="password" required value={form.password} onChange={set("password")} placeholder="••••••••" /></Field>
         <Field label="Confirm Password"><input style={inputStyle} type="password" required value={form.confirm} onChange={set("confirm")} placeholder="••••••••" /></Field>
         {err && <div style={{ background: "#FDE9EC", color: "#B4223A", padding: "10px 12px", borderRadius: 9, fontSize: 13, marginBottom: 16 }}>{err}</div>}
