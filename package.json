@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "npm install --prefix client && npm run build --prefix client && prisma generate",
-    "build:server": "prisma generate",
+    "build:server": "npm install && npx prisma generate",
     "start": "prisma db push --accept-data-loss --skip-generate && node server/index.js",
     "dev:server": "node server/index.js",
     "seed": "node server/seed.js"
