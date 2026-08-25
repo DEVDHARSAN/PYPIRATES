@@ -124,11 +124,34 @@ function CountUp({ value, duration = 900 }) {
 
 function ToastStack({ toasts }) {
   return (
-    <div style={{ position: "fixed", top: 20, right: 20, zIndex: 999, display: "flex", flexDirection: "column", gap: 10, width: 320 }}>
+    <div style={{ position: "fixed", top: 20, right: 20, zIndex: 9999, display: "flex", flexDirection: "column", gap: 10, width: 340 }}>
+      <style>{`
+        @keyframes toastIn { from { opacity:0; transform:translateX(110%); } to { opacity:1; transform:translateX(0); } }
+        @keyframes toastProg { from { transform:scaleX(1); } to { transform:scaleX(0); } }
+      `}</style>
       {toasts.map((t) => (
-        <div key={t.id} style={{ background: palette.surface, border: `1px solid ${palette.line}`, borderRadius: 12, padding: "13px 15px", display: "flex", gap: 10, alignItems: "flex-start", boxShadow: "0 12px 32px rgba(0,0,0,0.35)", animation: "slideIn .25s ease", color: "#fff" }}>
-          {t.type === "error" ? <ShieldAlert size={18} color={palette.red} style={{ flexShrink: 0, marginTop: 1 }} /> : <CheckCircle2 size={18} color={palette.green} style={{ flexShrink: 0, marginTop: 1 }} />}
-          <div><div style={{ fontWeight: 700, fontSize: 13.5 }}>{t.title}</div>{t.desc && <div style={{ fontSize: 12.5, color: "#9AA3B8", marginTop: 2 }}>{t.desc}</div>}</div>
+        <div key={t.id} style={{
+          background: t.type === "error" ? "#180C0E" : "#0C1A14",
+          border: `1px solid ${t.type === "error" ? "rgba(228,70,90,0.3)" : "rgba(52,211,153,0.25)"}`,
+          borderLeft: `3px solid ${t.type === "error" ? palette.red : palette.green}`,
+          borderRadius: 12, padding: "14px 16px",
+          display: "flex", gap: 10, alignItems: "flex-start",
+          boxShadow: `0 20px 48px rgba(0,0,0,0.5)`,
+          animation: "toastIn .35s cubic-bezier(0.16,1,0.3,1)",
+          color: "#fff", position: "relative", overflow: "hidden",
+        }}>
+          {t.type === "error"
+            ? <ShieldAlert size={18} color={palette.red} style={{ flexShrink: 0, marginTop: 1 }} />
+            : <CheckCircle2 size={18} color={palette.green} style={{ flexShrink: 0, marginTop: 1 }} />}
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 700, fontSize: 13.5 }}>{t.title}</div>
+            {t.desc && <div style={{ fontSize: 12.5, color: "#9AA3B8", marginTop: 2 }}>{t.desc}</div>}
+          </div>
+          <div style={{
+            position: "absolute", bottom: 0, left: 0, right: 0, height: 2,
+            background: t.type === "error" ? palette.red : palette.green,
+            transformOrigin: "left", animation: "toastProg 3.4s linear forwards",
+          }} />
         </div>
       ))}
     </div>
@@ -269,24 +292,41 @@ function Landing({ go }) {
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+  useEffect(() => {
+    const els = document.querySelectorAll(".sf");
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("sf-on"); obs.unobserve(e.target); } });
+    }, { threshold: 0.1 });
+    els.forEach((el) => obs.observe(el));
+    return () => obs.disconnect();
+  }, []);
   const navItems = ["How It Works", "Features", "Security", "About"];
 
   return (
     <div style={{ background: palette.ink, color: "#fff", minHeight: "100%" }}>
       <style>{`
         @keyframes floatY { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
-        @keyframes pulseGlow { 0%,100%{opacity:.5} 50%{opacity:1} }
+        @keyframes pulseGlow { 0%,100%{opacity:.5;box-shadow:0 0 40px rgba(139,107,255,0.3)} 50%{opacity:1;box-shadow:0 0 80px rgba(139,107,255,0.6)} }
         @keyframes fadeUp { from{opacity:0; transform:translateY(14px)} to{opacity:1; transform:translateY(0)} }
         @keyframes slideIn { from{opacity:0; transform:translateX(20px)} to{opacity:1; transform:translateX(0)} }
         @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes shimmer { 0%{background-position:200% center} 100%{background-position:-200% center} }
+        @keyframes dotMove { 0%{transform:translateY(0) translateX(0)} 33%{transform:translateY(-8px) translateX(4px)} 66%{transform:translateY(4px) translateX(-4px)} 100%{transform:translateY(0) translateX(0)} }
         .spin { animation: spin 0.9s linear infinite; }
         .fadeUp { animation: fadeUp .6s ease both; }
+        .sf { opacity:0; transform:translateY(28px); transition: opacity 0.65s ease, transform 0.65s ease; }
+        .sf-on { opacity:1 !important; transform:translateY(0) !important; }
+        .grad-text { background: linear-gradient(135deg,#fff 0%,#C5CEFF 45%,#8B6FFF 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+        .nav-link:hover { color:#fff !important; }
+        .stat-card:hover { transform:translateY(-4px) !important; border-color:rgba(76,111,255,0.4) !important; }
+        .feature-card:hover { transform:translateY(-5px) !important; box-shadow:0 20px 40px rgba(76,111,255,0.12) !important; }
+        .testi-card:hover { border-color:rgba(139,107,255,0.35) !important; transform:translateY(-3px) !important; }
         @media (prefers-reduced-motion: reduce) { *{animation:none !important; transition:none !important;} }
       `}</style>
       <div style={{ position: "sticky", top: 0, zIndex: 50, padding: "14px 6%", display: "flex", alignItems: "center", justifyContent: "space-between", background: scrolled ? "rgba(10,14,26,0.75)" : "transparent", backdropFilter: scrolled ? "blur(14px)" : "none", borderBottom: scrolled ? `1px solid ${palette.line}` : "1px solid transparent", transition: "all .25s ease" }}>
         <Logo dark />
         <div style={{ display: "flex", gap: 28, fontSize: 14, fontWeight: 500, color: "#B9C0D4" }} className="hide-mobile">
-          {navItems.map((n) => <span key={n} style={{ cursor: "pointer" }} onClick={() => document.getElementById(n.toLowerCase().replaceAll(" ", "-"))?.scrollIntoView({ behavior: "smooth" })}>{n}</span>)}
+        {navItems.map((n) => <span key={n} className="nav-link" style={{ cursor: "pointer", transition: "color .2s" }} onClick={() => document.getElementById(n.toLowerCase().replaceAll(" ", "-"))?.scrollIntoView({ behavior: "smooth" })}>{n}</span>)}
         </div>
         <div style={{ display: "flex", gap: 10 }}>
           <Button variant="ghost" onClick={() => go("login")}>Login</Button>
@@ -299,7 +339,7 @@ function Landing({ go }) {
           <div style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "rgba(76,111,255,0.12)", border: "1px solid rgba(76,111,255,0.3)", padding: "6px 12px", borderRadius: 999, fontSize: 12.5, fontWeight: 600, color: "#9DB0FF", marginBottom: 22 }}>
             <Sparkles size={13} /> AI-Powered Student Feedback Intelligence
           </div>
-          <h1 style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: "clamp(34px,4.5vw,54px)", lineHeight: 1.08, fontWeight: 700, letterSpacing: -1, margin: 0 }}>Every Voice.<br />One Clear Picture.</h1>
+          <h1 className="grad-text" style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: "clamp(34px,4.5vw,54px)", lineHeight: 1.08, fontWeight: 700, letterSpacing: -1, margin: 0 }}>Every Voice.<br />One Clear Picture.</h1>
           <p style={{ fontSize: 16.5, color: "#A6AEC4", lineHeight: 1.6, maxWidth: 480, marginTop: 20 }}>PYPIRATES transforms scattered student feedback into intelligent clusters — helping institutions spot recurring concerns and turn student voices into meaningful action.</p>
           <div style={{ display: "flex", gap: 12, marginTop: 30, flexWrap: "wrap" }}>
             <Button icon={Send} onClick={() => go("register")}>Submit Feedback</Button>
@@ -322,18 +362,37 @@ function Landing({ go }) {
         </div>
       </div>
 
+      {/* ── Stats bar ── */}
+      <div className="sf" style={{ borderTop: `1px solid ${palette.line}`, borderBottom: `1px solid ${palette.line}`, padding: "40px 6%", background: "rgba(255,255,255,0.015)" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 20, maxWidth: 860, margin: "0 auto", textAlign: "center" }} className="grid-4">
+          {[
+            { n: 500, suf: "+", label: "Student Voices", color: palette.blue },
+            { n: 8,   suf: "",  label: "AI Clusters",    color: palette.violet },
+            { n: 30,  suf: "+", label: "Issue Categories", color: palette.cyan },
+            { n: 100, suf: "%", label: "Secure & Private", color: palette.green },
+          ].map((s) => (
+            <div key={s.label} className="stat-card" style={{ padding: "20px 12px", borderRadius: 16, border: `1px solid ${palette.line}`, transition: "all .25s ease", cursor: "default" }}>
+              <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 38, fontWeight: 700, color: s.color, lineHeight: 1 }}>
+                <CountUp value={s.n} duration={1200} />{s.suf}
+              </div>
+              <div style={{ color: "#8B93A7", fontSize: 13, marginTop: 6 }}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       <div id="how-it-works" style={{ padding: "80px 6%", background: palette.surface }}>
-        <div style={{ textAlign: "center", maxWidth: 640, margin: "0 auto 48px" }}>
+        <div className="sf" style={{ textAlign: "center", maxWidth: 640, margin: "0 auto 48px" }}>
           <h2 style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 32, fontWeight: 700, letterSpacing: -0.5 }}>Student Feedback Shouldn't Get Lost in the Noise</h2>
           <p style={{ color: "#9AA3B8", fontSize: 15.5, marginTop: 10 }}>Hundreds of concerns arrive every week. Reading and grouping them by hand doesn't scale.</p>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 20, marginBottom: 60 }} className="grid-3">
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 20, marginBottom: 60 }} className="grid-3 sf">
           {[{ t: "Too Much Feedback", d: "Hundreds of student concerns arrive through different channels every week.", icon: MessageSquare }, { t: "Manual Grouping", d: "Staff spend significant time reading and categorizing similar concerns by hand.", icon: Columns3 }, { t: "Delayed Insights", d: "Recurring issues may not become visible to decision-makers quickly enough.", icon: Clock }].map((c) => (
             <Card key={c.t} dark style={{ textAlign: "left" }}><c.icon size={20} color={palette.violet} /><div style={{ fontWeight: 700, fontSize: 16, marginTop: 12 }}>{c.t}</div><div style={{ color: "#8B93A7", fontSize: 13.5, marginTop: 6, lineHeight: 1.55 }}>{c.d}</div></Card>
           ))}
         </div>
-        <div style={{ textAlign: "center", fontWeight: 700, fontSize: 18, color: palette.cyan, marginBottom: 56 }}>PYPIRATES changes this.</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16 }} className="grid-4">
+        <div className="sf" style={{ textAlign: "center", fontWeight: 700, fontSize: 18, color: palette.cyan, marginBottom: 56 }}>PYPIRATES changes this.</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16 }} className="grid-4 sf">
           {[{ n: "01", t: "Collect", d: "Students securely submit their concerns." }, { n: "02", t: "Understand", d: "The system analyzes category, sentiment and keywords." }, { n: "03", t: "Cluster", d: "Similar concerns are grouped together automatically." }, { n: "04", t: "Act", d: "Administrators identify priorities and take action." }].map((s) => (
             <Card key={s.n} dark><div style={{ fontFamily: "'JetBrains Mono',monospace", color: palette.blue, fontWeight: 600, fontSize: 13 }}>{s.n}</div><div style={{ fontWeight: 700, fontSize: 17, marginTop: 8 }}>{s.t}</div><div style={{ color: "#8B93A7", fontSize: 13, marginTop: 6 }}>{s.d}</div></Card>
           ))}
@@ -354,12 +413,12 @@ function Landing({ go }) {
       </div>
 
       <div id="security" style={{ padding: "80px 6%", background: palette.surface }}>
-        <div style={{ textAlign: "center", marginBottom: 40 }}>
+        <div className="sf" style={{ textAlign: "center", marginBottom: 40 }}>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 8, color: palette.cyan, fontWeight: 700, fontSize: 13 }}><Shield size={16} /> SECURITY</div>
           <h2 style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 30, fontWeight: 700, marginTop: 8 }}>Built With Security at the Core</h2>
           <p style={{ color: "#9AA3B8", maxWidth: 560, margin: "10px auto 0", fontSize: 15 }}>Role-Based Access Control (RBAC) ensures only authorized users can reach sensitive information and administrative functionality — enforced on every server request, not just hidden in the UI.</p>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, maxWidth: 820, margin: "0 auto" }} className="grid-2">
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, maxWidth: 820, margin: "0 auto" }} className="grid-2 sf">
           <Card dark>
             <div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 700, fontSize: 16 }}><GraduationCap size={18} color={palette.blue} /> Student</div>
             {[["Submit feedback", true], ["View own feedback", true], ["View personal status", true], ["View all feedback", false], ["View analytics", false], ["Access admin panel", false]].map(([l, ok]) => (
@@ -375,10 +434,40 @@ function Landing({ go }) {
         </div>
       </div>
 
-      <div id="about" style={{ padding: "80px 6%", textAlign: "center" }}>
-        <h2 style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 28, fontWeight: 700 }}>Turning student voices into action</h2>
-        <p style={{ color: "#9AA3B8", maxWidth: 620, margin: "14px auto 30px", lineHeight: 1.6 }}>PYPIRATES was designed to reduce the manual effort involved in processing student feedback — helping institutions identify recurring concerns, understand sentiment, prioritize issues, track resolution, and make data-driven decisions.</p>
-        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 10, flexWrap: "wrap", fontSize: 13, color: "#7C8399", fontWeight: 600 }}>
+      {/* ── Testimonials ── */}
+      <div style={{ padding: "80px 6%" }}>
+        <div className="sf" style={{ textAlign: "center", marginBottom: 48 }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "rgba(139,107,255,0.1)", border: "1px solid rgba(139,107,255,0.25)", padding: "6px 12px", borderRadius: 999, fontSize: 12.5, fontWeight: 600, color: "#B9A0FF", marginBottom: 14 }}>
+            💬 Student Stories
+          </div>
+          <h2 style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 30, fontWeight: 700 }}>Voices That Matter</h2>
+          <p style={{ color: "#9AA3B8", fontSize: 15, marginTop: 10 }}>Real students, real concerns — turned into real change.</p>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 20 }} className="grid-3 sf">
+          {[
+            { name: "Priya M.", dept: "Computer Science", q: "I reported a Wi-Fi issue at midnight — by morning it was already Under Review. That's the fastest response we've ever seen from admin." },
+            { name: "Rahul K.", dept: "Mechanical Engineering", q: "The AI clustering is wild. My feedback about the canteen food quality was grouped with 12 other students saying the same thing — way more impactful together." },
+            { name: "Sneha T.", dept: "Biotechnology", q: "Finally a place where student voices don't just disappear. I can see the status of my complaint update in real time. Feels like someone is actually listening." },
+          ].map((t) => (
+            <div key={t.name} className="testi-card" style={{ background: palette.surface, border: `1px solid ${palette.line}`, borderRadius: 16, padding: 24, transition: "all .25s ease" }}>
+              <div style={{ fontSize: 32, marginBottom: 12, lineHeight: 1 }}>"</div>
+              <p style={{ color: "#B9C0D4", fontSize: 14, lineHeight: 1.65, margin: 0 }}>{t.q}</p>
+              <div style={{ marginTop: 20, display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ width: 36, height: 36, borderRadius: "50%", background: `linear-gradient(135deg, ${palette.violet}, ${palette.blue})`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 13, color: "#fff" }}>{t.name[0]}</div>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 13.5 }}>{t.name}</div>
+                  <div style={{ fontSize: 12, color: "#6B7288" }}>{t.dept}</div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div id="about" style={{ padding: "60px 6%", textAlign: "center", background: palette.surface }}>
+        <h2 className="sf" style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 28, fontWeight: 700 }}>Turning student voices into action</h2>
+        <p className="sf" style={{ color: "#9AA3B8", maxWidth: 620, margin: "14px auto 30px", lineHeight: 1.6 }}>PYPIRATES was designed to reduce the manual effort involved in processing student feedback — helping institutions identify recurring concerns, understand sentiment, prioritize issues, track resolution, and make data-driven decisions.</p>
+        <div className="sf" style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 10, flexWrap: "wrap", fontSize: 13, color: "#7C8399", fontWeight: 600 }}>
           {["Student Voices", "AI Processing", "Clusters", "Insights", "Action"].map((s, i, arr) => (
             <React.Fragment key={s}><span style={{ padding: "8px 14px", borderRadius: 999, background: "rgba(255,255,255,0.06)", border: `1px solid ${palette.line}` }}>{s}</span>{i < arr.length - 1 && <ArrowRight size={14} color="#555C70" />}</React.Fragment>
           ))}
@@ -1219,9 +1308,14 @@ export default function PypiratesApp() {
 
   return (
     <div style={{ fontFamily: "Inter, sans-serif", height: "100%", minHeight: "100vh" }}>
-      <style>{`* { box-sizing: border-box; }`}</style>
+      <style>{`
+        * { box-sizing: border-box; }
+        @keyframes pageFade { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+      `}</style>
       <ToastStack toasts={toasts} />
-      {content}
+      <div key={route} style={{ animation: "pageFade 0.28s ease both" }}>
+        {content}
+      </div>
     </div>
   );
 }
