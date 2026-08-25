@@ -444,10 +444,6 @@ function LoginPage({ go, doLogin }) {
         <Button type="submit" full disabled={loading}>{loading ? "Authenticating…" : "Log in"}</Button>
       </form>
       <div style={{ marginTop: 18, fontSize: 13, color: "#6B7288", textAlign: "center" }}>Don't have an account? <span style={{ color: palette.blue, fontWeight: 600, cursor: "pointer" }} onClick={() => go("register")}>Create account</span></div>
-      <Card style={{ marginTop: 22, background: "#EEF1FF" }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: palette.blue, marginBottom: 6 }}>DEMO ACCOUNTS</div>
-        <div style={{ fontSize: 12, color: "#444B60", lineHeight: 1.7 }}>Admin — admin@pypirates.edu / Admin@123<br />Student — aditi.sharma@pypirates.edu / demo123</div>
-      </Card>
     </AuthShell>
   );
 }
