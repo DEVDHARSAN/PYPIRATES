@@ -1,9 +1,10 @@
-// v2 - demo accounts removed from login page
+// v3 - split deploy: Render (backend) + Vercel (frontend)
 import express from "express";
 import cookieParser from "cookie-parser";
 import bcrypt from "bcryptjs";
 import path from "path";
 import { fileURLToPath } from "url";
+import fs from "fs";
 import { PrismaClient } from "@prisma/client";
 import { classifyFeedback, CLUSTER_DEFS } from "./clustering.js";
 import { signToken, setAuthCookie, clearAuthCookie, attachUser, requireAuth, requireRole } from "./auth.js";
@@ -12,6 +13,25 @@ import { seedIfEmpty } from "./seed.js";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const prisma = new PrismaClient();
 const app = express();
+
+// CORS — allows Vercel frontend and local dev
+const ALLOWED_ORIGINS = [
+  process.env.FRONTEND_URL,
+  "http://localhost:5173",
+  "http://localhost:3000",
+].filter(Boolean);
+
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+    if (origin) res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader("Access-Control-Allow-Methods", "GET,POST,PATCH,DELETE,OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  }
+  if (req.method === "OPTIONS") return res.sendStatus(204);
+  next();
+});
 
 app.use(express.json());
 app.use(cookieParser());
@@ -203,12 +223,14 @@ app.post("/api/admin/simulate", requireRole("ADMIN"), async (req, res) => {
   res.status(201).json({ success: true, data: { ...item, studentName: student.name } });
 });
 
-/* ---------------------------- Static frontend ---------------------------- */
+/* ---------------------------- Static frontend (only in monolith mode) ---- */
 const clientDist = path.join(__dirname, "..", "client", "dist");
-app.use(express.static(clientDist));
-app.get(/^(?!\/api).*/, (req, res) => {
-  res.sendFile(path.join(clientDist, "index.html"));
-});
+if (fs.existsSync(clientDist)) {
+  app.use(express.static(clientDist));
+  app.get(/^(?!\/api).*/, (req, res) => {
+    res.sendFile(path.join(clientDist, "index.html"));
+  });
+}
 
 const PORT = process.env.PORT || 3000;
 
