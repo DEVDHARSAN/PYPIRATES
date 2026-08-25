@@ -399,24 +399,80 @@ function Landing({ go }) {
 }
 
 /* ---------------------------- Auth pages ----------------------------------- */
-function AuthShell({ children, title, sub }) {
+function AuthShell({ children, title, sub, go }) {
   return (
-    <div style={{ minHeight: "100%", display: "grid", gridTemplateColumns: "1fr 1fr", background: palette.ink }} className="auth-grid">
-      <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", padding: "60px 8%", background: `linear-gradient(160deg, ${palette.ink}, #151B33)`, color: "#fff", position: "relative", overflow: "hidden" }} className="auth-left">
-        <div style={{ position: "absolute", width: 400, height: 400, borderRadius: "50%", background: "radial-gradient(circle, rgba(139,107,255,0.18), transparent 70%)", top: -100, right: -120 }} />
-        <Logo dark size={30} />
-        <h2 style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 30, marginTop: 40, lineHeight: 1.2, maxWidth: 360 }}>Every voice, understood at scale.</h2>
-        <p style={{ color: "#98A0B8", marginTop: 14, maxWidth: 340, lineHeight: 1.6 }}>Backed by a real authenticated session and server-side role checks on every request.</p>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 40, fontSize: 13, color: "#8B93A7" }}><Lock size={15} color={palette.cyan} /> Secure Access</div>
+    <div style={{ minHeight: "100vh", display: "grid", gridTemplateColumns: "1fr 1fr", background: palette.ink }} className="auth-grid">
+      {/* Left branding panel */}
+      <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", padding: "60px 8%", background: "linear-gradient(160deg, #080C1A 0%, #0E1428 50%, #151B33 100%)", color: "#fff", position: "relative", overflow: "hidden" }} className="auth-left">
+        {/* Animated floating orbs */}
+        <div style={{ position: "absolute", width: 420, height: 420, borderRadius: "50%", background: "radial-gradient(circle, rgba(139,107,255,0.2), transparent 70%)", top: -120, right: -100, animation: "authFloat 7s ease-in-out infinite" }} />
+        <div style={{ position: "absolute", width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(circle, rgba(76,111,255,0.15), transparent 70%)", bottom: -80, left: -80, animation: "authFloat 9s ease-in-out infinite 2s" }} />
+        <div style={{ position: "absolute", width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle, rgba(79,209,232,0.1), transparent 70%)", top: "45%", right: "8%", animation: "authFloat 6s ease-in-out infinite 4s" }} />
+        {/* Back button */}
+        {go && (
+          <div onClick={() => go("landing")} className="auth-back-btn" style={{ position: "absolute", top: 24, left: 24, display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#8B93A7", cursor: "pointer", padding: "7px 14px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)", backdropFilter: "blur(8px)", transition: "all 0.2s", zIndex: 10 }}>
+            ← Back to home
+          </div>
+        )}
+        {/* Content */}
+        <div style={{ animation: "authFadeUp 0.6s ease-out 0.1s both" }}>
+          <Logo dark size={30} />
+        </div>
+        <h2 style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 32, marginTop: 40, lineHeight: 1.2, maxWidth: 360, animation: "authFadeUp 0.6s ease-out 0.2s both" }}>
+          Every voice,<br />understood at scale.
+        </h2>
+        <p style={{ color: "#98A0B8", marginTop: 14, maxWidth: 340, lineHeight: 1.6, animation: "authFadeUp 0.6s ease-out 0.3s both" }}>
+          Real authenticated sessions with server-side role checks on every request.
+        </p>
+        <div style={{ marginTop: 36, display: "flex", flexDirection: "column", gap: 14, animation: "authFadeUp 0.6s ease-out 0.4s both" }}>
+          {[
+            { icon: "🔒", text: "JWT httpOnly cookie auth" },
+            { icon: "🛡️", text: "Server-side RBAC enforcement" },
+            { icon: "🤖", text: "AI-powered feedback clustering" },
+            { icon: "📊", text: "Real-time analytics dashboard" },
+          ].map((f) => (
+            <div key={f.text} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: "#8B93A7" }}>
+              <span style={{ fontSize: 16 }}>{f.icon}</span> {f.text}
+            </div>
+          ))}
+        </div>
       </div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 8%", background: palette.paper }}>
-        <div style={{ width: "100%", maxWidth: 380 }}>
-          <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 24, color: palette.ink }}>{title}</div>
-          <div style={{ color: "#6B7288", fontSize: 14, marginTop: 6, marginBottom: 26 }}>{sub}</div>
+
+      {/* Right form panel */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 8%", background: palette.paper, position: "relative", minHeight: "100vh" }}>
+        {/* Mobile back button */}
+        {go && (
+          <div onClick={() => go("landing")} className="auth-back-mobile" style={{ display: "none", position: "absolute", top: 20, left: 20, alignItems: "center", gap: 6, fontSize: 13, color: "#6B7288", cursor: "pointer" }}>
+            ← Back
+          </div>
+        )}
+        <div style={{ width: "100%", maxWidth: 380, animation: "authFormIn 0.5s ease-out 0.15s both" }}>
+          <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 26, color: palette.ink }}>{title}</div>
+          <div style={{ color: "#6B7288", fontSize: 14, marginTop: 6, marginBottom: 28 }}>{sub}</div>
           {children}
         </div>
       </div>
-      <style>{`@media (max-width:800px){ .auth-grid{grid-template-columns:1fr !important;} .auth-left{display:none !important;} }`}</style>
+
+      <style>{`
+        @keyframes authFloat {
+          0%, 100% { transform: translateY(0px) scale(1); }
+          50% { transform: translateY(-24px) scale(1.04); }
+        }
+        @keyframes authFadeUp {
+          from { opacity: 0; transform: translateY(22px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes authFormIn {
+          from { opacity: 0; transform: translateY(16px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .auth-back-btn:hover { color: #fff !important; border-color: rgba(255,255,255,0.35) !important; background: rgba(255,255,255,0.05); }
+        @media (max-width: 800px) {
+          .auth-grid { grid-template-columns: 1fr !important; }
+          .auth-left { display: none !important; }
+          .auth-back-mobile { display: flex !important; }
+        }
+      `}</style>
     </div>
   );
 }
@@ -431,7 +487,7 @@ function LoginPage({ go, doLogin }) {
     if (!res.ok) setErr(res.error);
   };
   return (
-    <AuthShell title="Welcome back" sub="Log in to continue to PYPIRATES.">
+    <AuthShell title="Welcome back" sub="Log in to continue to PYPIRATES." go={go}>
       <form onSubmit={submit}>
         <Field label="Email"><input style={inputStyle} type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@pypirates.edu" /></Field>
         <Field label="Password">
@@ -462,7 +518,7 @@ function RegisterPage({ go, doRegister }) {
     if (!res.ok) setErr(res.error);
   };
   return (
-    <AuthShell title="Create your account" sub="Registration always creates a STUDENT account — the server never accepts a role from this form.">
+    <AuthShell title="Create your account" sub="Registration always creates a STUDENT account — the server never accepts a role from this form." go={go}>
       <form onSubmit={submit}>
         <Field label="Full Name"><input style={inputStyle} required value={form.name} onChange={set("name")} placeholder="Aditi Sharma" /></Field>
         <Field label="College Email"><input style={inputStyle} type="email" required value={form.email} onChange={set("email")} placeholder="you@pypirates.edu" /></Field>
