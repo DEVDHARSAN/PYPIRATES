@@ -497,77 +497,95 @@ function Landing({ go }) {
 /* ---------------------------- Auth pages ----------------------------------- */
 function AuthShell({ children, title, sub, go }) {
   return (
-    <div style={{ minHeight: "100vh", display: "grid", gridTemplateColumns: "1fr 1fr", background: palette.ink }} className="auth-grid">
-      {/* Left branding panel */}
-      <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", padding: "60px 8%", background: "linear-gradient(160deg, #080C1A 0%, #0E1428 50%, #151B33 100%)", color: "#fff", position: "relative", overflow: "hidden" }} className="auth-left">
-        {/* Animated floating orbs */}
-        <div style={{ position: "absolute", width: 420, height: 420, borderRadius: "50%", background: "radial-gradient(circle, rgba(139,107,255,0.2), transparent 70%)", top: -120, right: -100, animation: "authFloat 7s ease-in-out infinite" }} />
-        <div style={{ position: "absolute", width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(circle, rgba(76,111,255,0.15), transparent 70%)", bottom: -80, left: -80, animation: "authFloat 9s ease-in-out infinite 2s" }} />
-        <div style={{ position: "absolute", width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle, rgba(79,209,232,0.1), transparent 70%)", top: "45%", right: "8%", animation: "authFloat 6s ease-in-out infinite 4s" }} />
-        {/* Back button */}
-        {go && (
-          <div onClick={() => go("landing")} className="auth-back-btn" style={{ position: "absolute", top: 24, left: 24, display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#8B93A7", cursor: "pointer", padding: "7px 14px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)", backdropFilter: "blur(8px)", transition: "all 0.2s", zIndex: 10 }}>
-            ← Back to home
-          </div>
-        )}
-        {/* Content */}
-        <div style={{ animation: "authFadeUp 0.6s ease-out 0.1s both" }}>
-          <Logo dark size={30} />
-        </div>
-        <h2 style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 32, marginTop: 40, lineHeight: 1.2, maxWidth: 360, animation: "authFadeUp 0.6s ease-out 0.2s both" }}>
-          Every voice,<br />understood at scale.
-        </h2>
-        <p style={{ color: "#98A0B8", marginTop: 14, maxWidth: 340, lineHeight: 1.6, animation: "authFadeUp 0.6s ease-out 0.3s both" }}>
-          Real authenticated sessions with server-side role checks on every request.
-        </p>
-        <div style={{ marginTop: 36, display: "flex", flexDirection: "column", gap: 14, animation: "authFadeUp 0.6s ease-out 0.4s both" }}>
-          {[
-            { icon: "🔒", text: "JWT httpOnly cookie auth" },
-            { icon: "🛡️", text: "Server-side RBAC enforcement" },
-            { icon: "🤖", text: "AI-powered feedback clustering" },
-            { icon: "📊", text: "Real-time analytics dashboard" },
-          ].map((f) => (
-            <div key={f.text} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: "#8B93A7" }}>
-              <span style={{ fontSize: 16 }}>{f.icon}</span> {f.text}
-            </div>
-          ))}
-        </div>
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", position: "relative", overflow: "hidden", background: "#05081A" }}>
+
+      {/* ── Animated aurora blobs ── */}
+      <div style={{ position: "absolute", inset: 0, zIndex: 0 }}>
+        <div style={{ position: "absolute", width: 700, height: 700, borderRadius: "50%", background: "radial-gradient(circle, rgba(76,111,255,0.28) 0%, transparent 70%)", top: "-20%", left: "-15%", animation: "auroraA 10s ease-in-out infinite" }} />
+        <div style={{ position: "absolute", width: 600, height: 600, borderRadius: "50%", background: "radial-gradient(circle, rgba(139,107,255,0.22) 0%, transparent 70%)", bottom: "-15%", right: "-10%", animation: "auroraB 13s ease-in-out infinite 1s" }} />
+        <div style={{ position: "absolute", width: 400, height: 400, borderRadius: "50%", background: "radial-gradient(circle, rgba(79,209,232,0.18) 0%, transparent 70%)", top: "40%", right: "20%", animation: "auroraC 8s ease-in-out infinite 3s" }} />
+        <div style={{ position: "absolute", width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(circle, rgba(245,166,35,0.1) 0%, transparent 70%)", top: "10%", right: "35%", animation: "auroraA 12s ease-in-out infinite 5s" }} />
+        {/* Grid dots */}
+        <div style={{ position: "absolute", inset: 0, backgroundImage: "radial-gradient(rgba(255,255,255,0.045) 1px, transparent 1px)", backgroundSize: "32px 32px", zIndex: 0 }} />
       </div>
 
-      {/* Right form panel */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 8%", background: palette.paper, position: "relative", minHeight: "100vh" }}>
-        {/* Mobile back button */}
-        {go && (
-          <div onClick={() => go("landing")} className="auth-back-mobile" style={{ display: "none", position: "absolute", top: 20, left: 20, alignItems: "center", gap: 6, fontSize: 13, color: "#6B7288", cursor: "pointer" }}>
-            ← Back
+      {/* ── Back button ── */}
+      {go && (
+        <div onClick={() => go("landing")} style={{ position: "fixed", top: 22, left: 22, zIndex: 20, display: "flex", alignItems: "center", gap: 7, fontSize: 13, color: "rgba(255,255,255,0.55)", cursor: "pointer", padding: "8px 16px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.1)", backdropFilter: "blur(10px)", background: "rgba(255,255,255,0.04)", transition: "all .2s" }} className="auth-back">
+          ← Back to home
+        </div>
+      )}
+
+      {/* ── Central glass card ── */}
+      <div style={{ position: "relative", zIndex: 10, width: "100%", maxWidth: 440, margin: "0 16px", animation: "cardDrop 0.55s cubic-bezier(.22,.68,0,1.2) both" }}>
+
+        {/* Top glow line */}
+        <div style={{ position: "absolute", top: 0, left: "10%", right: "10%", height: 1, background: "linear-gradient(90deg, transparent, rgba(139,107,255,0.8), rgba(76,111,255,0.8), transparent)", borderRadius: 99 }} />
+
+        <div style={{ background: "rgba(12,16,35,0.75)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 24, padding: "42px 40px 40px", boxShadow: "0 30px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(139,107,255,0.12)" }}>
+
+          {/* Logo + brand */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 30, animation: "fadeSlide 0.4s ease 0.1s both" }}>
+            <div style={{ width: 38, height: 38, borderRadius: 11, background: `linear-gradient(135deg, ${palette.blue}, ${palette.violet})`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 0 20px rgba(139,107,255,0.5)` }}>
+              <MessageSquare size={18} color="#fff" />
+            </div>
+            <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 17, color: "#fff", letterSpacing: 0.5 }}>PYPIRATES</span>
           </div>
-        )}
-        <div style={{ width: "100%", maxWidth: 380, animation: "authFormIn 0.5s ease-out 0.15s both" }}>
-          <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 26, color: palette.ink }}>{title}</div>
-          <div style={{ color: "#6B7288", fontSize: 14, marginTop: 6, marginBottom: 28 }}>{sub}</div>
-          {children}
+
+          {/* Title */}
+          <div style={{ animation: "fadeSlide 0.4s ease 0.18s both" }}>
+            <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 26, color: "#fff", lineHeight: 1.2 }}>{title}</div>
+            <div style={{ color: "rgba(255,255,255,0.45)", fontSize: 13.5, marginTop: 7, marginBottom: 28 }}>{sub}</div>
+          </div>
+
+          {/* Form content */}
+          <div style={{ animation: "fadeSlide 0.4s ease 0.26s both" }}>
+            {children}
+          </div>
+
+          {/* Bottom badges */}
+          <div style={{ marginTop: 28, display: "flex", justifyContent: "center", gap: 14, flexWrap: "wrap", animation: "fadeSlide 0.4s ease 0.34s both" }}>
+            {[["🔒","JWT Secure"],["🛡️","RBAC"],["🤖","AI-Powered"]].map(([ic,tx]) => (
+              <div key={tx} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11.5, color: "rgba(255,255,255,0.35)", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)", padding: "4px 10px", borderRadius: 20 }}>
+                <span>{ic}</span><span>{tx}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
       <style>{`
-        @keyframes authFloat {
-          0%, 100% { transform: translateY(0px) scale(1); }
-          50% { transform: translateY(-24px) scale(1.04); }
+        @keyframes auroraA { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(60px,-40px) scale(1.1)} }
+        @keyframes auroraB { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(-50px,35px) scale(1.08)} }
+        @keyframes auroraC { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(30px,30px) scale(1.12)} }
+        @keyframes cardDrop { from{opacity:0;transform:translateY(32px) scale(0.97)} to{opacity:1;transform:translateY(0) scale(1)} }
+        @keyframes fadeSlide { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+        .auth-back:hover { color: #fff !important; border-color: rgba(255,255,255,0.25) !important; background: rgba(255,255,255,0.08) !important; }
+        .auth-input {
+          width: 100%; padding: 12px 14px; border-radius: 12px;
+          background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+          color: #fff; font-size: 14px; outline: none; box-sizing: border-box;
+          transition: border-color .2s, box-shadow .2s; font-family: inherit;
         }
-        @keyframes authFadeUp {
-          from { opacity: 0; transform: translateY(22px); }
-          to { opacity: 1; transform: translateY(0); }
+        .auth-input::placeholder { color: rgba(255,255,255,0.28); }
+        .auth-input:focus { border-color: rgba(139,107,255,0.7); box-shadow: 0 0 0 3px rgba(139,107,255,0.15); background: rgba(255,255,255,0.09); }
+        .auth-label { font-size: 12.5px; font-weight: 600; color: rgba(255,255,255,0.55); margin-bottom: 7px; display: block; letter-spacing: 0.3px; }
+        .auth-field { margin-bottom: 18px; }
+        .auth-btn {
+          width: 100%; padding: 13px; border-radius: 12px; border: none; cursor: pointer;
+          background: linear-gradient(135deg, ${palette.blue}, ${palette.violet});
+          color: #fff; font-weight: 700; font-size: 15px; font-family: inherit;
+          box-shadow: 0 4px 24px rgba(139,107,255,0.4);
+          transition: all .2s; position: relative; overflow: hidden;
         }
-        @keyframes authFormIn {
-          from { opacity: 0; transform: translateY(16px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .auth-back-btn:hover { color: #fff !important; border-color: rgba(255,255,255,0.35) !important; background: rgba(255,255,255,0.05); }
-        @media (max-width: 800px) {
-          .auth-grid { grid-template-columns: 1fr !important; }
-          .auth-left { display: none !important; }
-          .auth-back-mobile { display: flex !important; }
-        }
+        .auth-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(139,107,255,0.55); }
+        .auth-btn:active:not(:disabled) { transform: translateY(0); }
+        .auth-btn:disabled { opacity: 0.65; cursor: not-allowed; }
+        .auth-btn::after { content:''; position:absolute; inset:0; background:linear-gradient(90deg,transparent,rgba(255,255,255,0.15),transparent); transform:translateX(-100%); transition: transform .5s; }
+        .auth-btn:hover::after { transform: translateX(100%); }
+        .auth-err { background: rgba(240,84,107,0.15); border: 1px solid rgba(240,84,107,0.35); color: #FF8599; padding: 10px 13px; border-radius: 10px; font-size: 13px; margin-bottom: 16px; }
+        .auth-link { color: ${palette.blue}; font-weight: 600; cursor: pointer; }
+        .auth-link:hover { color: ${palette.violet}; }
       `}</style>
     </div>
   );
@@ -585,17 +603,23 @@ function LoginPage({ go, doLogin }) {
   return (
     <AuthShell title="Welcome back" sub="Log in to continue to PYPIRATES." go={go}>
       <form onSubmit={submit}>
-        <Field label="Email"><input style={inputStyle} type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@pypirates.edu" /></Field>
-        <Field label="Password">
+        <div className="auth-field">
+          <label className="auth-label">Email address</label>
+          <input className="auth-input" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@pypirates.edu" />
+        </div>
+        <div className="auth-field">
+          <label className="auth-label">Password</label>
           <div style={{ position: "relative" }}>
-            <input style={{ ...inputStyle, paddingRight: 40 }} type={showPw ? "text" : "password"} required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
-            <span onClick={() => setShowPw((s) => !s)} style={{ position: "absolute", right: 12, top: 12, cursor: "pointer", color: "#8890A4" }}>{showPw ? <EyeOff size={16} /> : <Eye size={16} />}</span>
+            <input className="auth-input" style={{ paddingRight: 42 }} type={showPw ? "text" : "password"} required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
+            <span onClick={() => setShowPw((s) => !s)} style={{ position: "absolute", right: 13, top: 13, cursor: "pointer", color: "rgba(255,255,255,0.4)" }}>{showPw ? <EyeOff size={16} /> : <Eye size={16} />}</span>
           </div>
-        </Field>
-        {err && <div style={{ background: "#FDE9EC", color: "#B4223A", padding: "10px 12px", borderRadius: 9, fontSize: 13, marginBottom: 16, display: "flex", gap: 8, alignItems: "center" }}><ShieldAlert size={15} /> {err}</div>}
-        <Button type="submit" full disabled={loading}>{loading ? "Authenticating…" : "Log in"}</Button>
+        </div>
+        {err && <div className="auth-err" style={{ display: "flex", gap: 8, alignItems: "center" }}><ShieldAlert size={15} /> {err}</div>}
+        <button type="submit" className="auth-btn" disabled={loading}>{loading ? "Authenticating…" : "Log in"}</button>
       </form>
-      <div style={{ marginTop: 18, fontSize: 13, color: "#6B7288", textAlign: "center" }}>Don't have an account? <span style={{ color: palette.blue, fontWeight: 600, cursor: "pointer" }} onClick={() => go("register")}>Create account</span></div>
+      <div style={{ marginTop: 20, fontSize: 13, color: "rgba(255,255,255,0.38)", textAlign: "center" }}>
+        Don't have an account? <span className="auth-link" onClick={() => go("register")}>Create account</span>
+      </div>
     </AuthShell>
   );
 }
@@ -614,33 +638,31 @@ function RegisterPage({ go, doRegister }) {
     setLoading(false);
     if (!res.ok) setErr(res.error);
   };
+  const selStyle = { width: "100%", padding: "12px 14px", borderRadius: 12, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff", fontSize: 14, outline: "none", boxSizing: "border-box", fontFamily: "inherit" };
   return (
-    <AuthShell title="Create your account" sub="Registration always creates a STUDENT account — the server never accepts a role from this form." go={go}>
+    <AuthShell title="Create your account" sub="Always creates a STUDENT account — role is enforced server-side." go={go}>
       <form onSubmit={submit}>
-        <Field label="Full Name"><input style={inputStyle} required value={form.name} onChange={set("name")} placeholder="Aditi Sharma" /></Field>
-        <Field label="College Email"><input style={inputStyle} type="email" required value={form.email} onChange={set("email")} placeholder="you@pypirates.edu" /></Field>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-          <Field label="Department">
-            <input
-              style={inputStyle}
-              list="dept-suggestions"
-              required
-              value={form.department}
-              onChange={set("department")}
-              placeholder="Type or pick one…"
-            />
-            <datalist id="dept-suggestions">
-              {DEPARTMENTS.map((d) => <option key={d} value={d} />)}
-            </datalist>
-          </Field>
-          <Field label="Year"><select style={inputStyle} value={form.year} onChange={set("year")}>{[1, 2, 3, 4].map((y) => <option key={y} value={y}>{y}</option>)}</select></Field>
+        <div className="auth-field"><label className="auth-label">Full Name</label><input className="auth-input" required value={form.name} onChange={set("name")} placeholder="Aditi Sharma" /></div>
+        <div className="auth-field"><label className="auth-label">College Email</label><input className="auth-input" type="email" required value={form.email} onChange={set("email")} placeholder="you@pypirates.edu" /></div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 18 }}>
+          <div>
+            <label className="auth-label">Department</label>
+            <input className="auth-input" list="dept-suggestions" required value={form.department} onChange={set("department")} placeholder="Type or pick…" />
+            <datalist id="dept-suggestions">{DEPARTMENTS.map((d) => <option key={d} value={d} />)}</datalist>
+          </div>
+          <div>
+            <label className="auth-label">Year</label>
+            <select style={selStyle} value={form.year} onChange={set("year")}>{[1,2,3,4].map((y) => <option key={y} value={y}>Year {y}</option>)}</select>
+          </div>
         </div>
-        <Field label="Password"><input style={inputStyle} type="password" required value={form.password} onChange={set("password")} placeholder="••••••••" /></Field>
-        <Field label="Confirm Password"><input style={inputStyle} type="password" required value={form.confirm} onChange={set("confirm")} placeholder="••••••••" /></Field>
-        {err && <div style={{ background: "#FDE9EC", color: "#B4223A", padding: "10px 12px", borderRadius: 9, fontSize: 13, marginBottom: 16 }}>{err}</div>}
-        <Button type="submit" full disabled={loading}>{loading ? "Creating account…" : "Create account"}</Button>
+        <div className="auth-field"><label className="auth-label">Password</label><input className="auth-input" type="password" required value={form.password} onChange={set("password")} placeholder="Min. 6 characters" /></div>
+        <div className="auth-field"><label className="auth-label">Confirm Password</label><input className="auth-input" type="password" required value={form.confirm} onChange={set("confirm")} placeholder="••••••••" /></div>
+        {err && <div className="auth-err">{err}</div>}
+        <button type="submit" className="auth-btn" disabled={loading}>{loading ? "Creating account…" : "Create account"}</button>
       </form>
-      <div style={{ marginTop: 18, fontSize: 13, color: "#6B7288", textAlign: "center" }}>Already have an account? <span style={{ color: palette.blue, fontWeight: 600, cursor: "pointer" }} onClick={() => go("login")}>Log in</span></div>
+      <div style={{ marginTop: 20, fontSize: 13, color: "rgba(255,255,255,0.38)", textAlign: "center" }}>
+        Already have an account? <span className="auth-link" onClick={() => go("login")}>Log in</span>
+      </div>
     </AuthShell>
   );
 }
