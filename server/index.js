@@ -205,6 +205,19 @@ app.get("/api/admin/users", requireRole("ADMIN"), async (req, res) => {
   res.json({ success: true, data: users.map(publicUser) });
 });
 
+// Change password — any authenticated user can change their own password
+app.post("/api/me/password", requireAuth, async (req, res) => {
+  const { current, newPassword } = req.body;
+  if (!current || !newPassword) return res.status(400).json({ success: false, error: "Both current and new password are required." });
+  if (newPassword.length < 6) return res.status(400).json({ success: false, error: "New password must be at least 6 characters." });
+  const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+  const match = await bcrypt.compare(current, user.password);
+  if (!match) return res.status(401).json({ success: false, error: "Current password is incorrect." });
+  const hashed = await bcrypt.hash(newPassword, 10);
+  await prisma.user.update({ where: { id: req.user.id }, data: { password: hashed } });
+  res.json({ success: true });
+});
+
 // Demo helper: creates one realistic incoming feedback item so the "live" feel
 // can be shown during a walkthrough. Still goes through the same clustering path.
 app.post("/api/admin/simulate", requireRole("ADMIN"), async (req, res) => {

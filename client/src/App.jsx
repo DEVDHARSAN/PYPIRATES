@@ -5,6 +5,7 @@ import {
   Sun, Moon, Clock, TrendingUp, TrendingDown, Eye, EyeOff, User, GraduationCap,
   Wifi, Bus, Utensils, BookOpen, Monitor, FileText, Columns3, ArrowRight,
   ShieldCheck, ShieldAlert, Building2, ClipboardList, Trash2, RefreshCw, Loader2,
+  ArrowUp, Download, SortDesc, KeyRound, Filter,
 } from "lucide-react";
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis,
@@ -287,8 +288,9 @@ function ClusteringPlayground() {
 
 function Landing({ go }) {
   const [scrolled, setScrolled] = useState(false);
+  const [showTop, setShowTop] = useState(false);
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20);
+    const onScroll = () => { setScrolled(window.scrollY > 20); setShowTop(window.scrollY > 400); };
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
@@ -483,6 +485,11 @@ function Landing({ go }) {
         </div>
       </div>
       <style>{`@media (max-width: 860px) { .hero-grid, .grid-3, .grid-4, .grid-2 { grid-template-columns: 1fr !important; } .hide-mobile { display: none !important; } }`}</style>
+      {showTop && (
+        <div onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} title="Back to top" style={{ position: "fixed", bottom: 28, right: 28, width: 42, height: 42, borderRadius: "50%", background: `linear-gradient(135deg, ${palette.blue}, ${palette.violet})`, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 4px 18px rgba(76,111,255,0.45)", animation: "fadeUp .3s ease", zIndex: 50 }}>
+          <ArrowUp size={18} />
+        </div>
+      )}
     </div>
   );
 }
@@ -824,17 +831,35 @@ function SubmitFeedback({ session, dark, pushToast, go }) {
       <PageHeader dark={dark} title="Tell Us What's Happening" sub="Describe the issue in detail — our AI groups it with similar concerns automatically." />
       <Card dark={dark}>
         <form onSubmit={submit}>
-          <Field label="Feedback Title"><input style={inputStyle} value={title} onChange={(e) => setTitle(e.target.value)} placeholder='e.g. "Wi-Fi connectivity issue in Block B"' /></Field>
-          <Field label="Description"><textarea style={{ ...inputStyle, minHeight: 120, resize: "vertical" }} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Describe the issue in detail…" /></Field>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: 12.5, fontWeight: 600, color: "#444B60", display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+              <span>Feedback Title</span>
+              <span style={{ fontWeight: 500, color: title.length > 100 ? palette.red : title.length > 80 ? palette.amber : "#8B93A7" }}>{title.length}/120</span>
+            </label>
+            <input maxLength={120} style={inputStyle} value={title} onChange={(e) => setTitle(e.target.value)} placeholder='e.g. "Wi-Fi connectivity issue in Block B"' />
+          </div>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: 12.5, fontWeight: 600, color: "#444B60", display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+              <span>Description</span>
+              <span style={{ fontWeight: 500, color: description.length > 720 ? palette.red : description.length > 600 ? palette.amber : "#8B93A7" }}>{description.length}/800</span>
+            </label>
+            <textarea maxLength={800} style={{ ...inputStyle, minHeight: 120, resize: "vertical" }} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Describe the issue in detail — the more specific, the better the AI classification." />
+          </div>
           <Field label="Category">
             <select style={inputStyle} value={category} onChange={(e) => setCategory(e.target.value)}>
               <option value="">Select a category</option>
               {["Academics", "Infrastructure", "Hostel", "Transport", "Food", "Faculty", "Examination", "Library", "Fees", "Technology", "Campus Life", "Other"].map((c) => <option key={c}>{c}</option>)}
             </select>
           </Field>
-          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: dark ? "#9AA3B8" : "#6B7288", marginBottom: 20 }}><input type="checkbox" checked={anonymous} onChange={(e) => setAnonymous(e.target.checked)} /> Submit anonymously</label>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: dark ? "#9AA3B8" : "#6B7288", marginBottom: 16 }}>
+            <input type="checkbox" checked={anonymous} onChange={(e) => setAnonymous(e.target.checked)} /> Submit anonymously
+          </label>
+          <div style={{ background: dark ? "rgba(76,111,255,0.08)" : "#F0F4FF", border: `1px solid ${dark ? "rgba(76,111,255,0.2)" : "#C8D5FF"}`, borderRadius: 9, padding: "10px 13px", marginBottom: 16, fontSize: 12.5, color: dark ? "#9AA3B8" : "#5B6278", display: "flex", gap: 8, alignItems: "flex-start" }}>
+            <Sparkles size={14} color={palette.blue} style={{ flexShrink: 0, marginTop: 1 }} />
+            <span><strong style={{ color: palette.blue }}>AI Tip:</strong> Mention keywords like "hostel", "wifi", "canteen", "bus" to improve clustering accuracy.</span>
+          </div>
           {err && <div style={{ background: "#FDE9EC", color: "#B4223A", padding: "10px 12px", borderRadius: 9, fontSize: 13, marginBottom: 16 }}>{err}</div>}
-          <Button type="submit" icon={Sparkles} full>Analyze & Submit Feedback</Button>
+          <Button type="submit" icon={Sparkles} full>Analyze &amp; Submit Feedback</Button>
         </form>
       </Card>
     </div>
@@ -844,6 +869,9 @@ function SubmitFeedback({ session, dark, pushToast, go }) {
 function MyFeedback({ session, dark, pushToast, refreshKey, bumpRefresh }) {
   const [items, setItems] = useState(null);
   const [selected, setSelected] = useState(null);
+  const [search, setSearch] = useState("");
+  const [statusF, setStatusF] = useState("");
+  const [sortBy, setSortBy] = useState("newest");
   useEffect(() => { api("/api/my-feedback").then((r) => setItems(r.ok ? r.data : [])); }, [refreshKey]);
   const withdraw = async (id) => {
     if (!window.confirm("Withdraw this feedback? This can't be undone.")) return;
@@ -852,12 +880,45 @@ function MyFeedback({ session, dark, pushToast, refreshKey, bumpRefresh }) {
     else pushToast({ title: "Couldn't withdraw", desc: res.error, type: "error" });
   };
   if (items === null) return <LoadingBlock dark={dark} />;
+  const PRIO = { LOW: 0, MEDIUM: 1, HIGH: 2, CRITICAL: 3 };
+  let filtered = items.filter((f) =>
+    (!search || f.title.toLowerCase().includes(search.toLowerCase()) || f.description?.toLowerCase().includes(search.toLowerCase())) &&
+    (!statusF || f.status === statusF)
+  );
+  if (sortBy === "oldest") filtered = [...filtered].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+  else if (sortBy === "priority") filtered = [...filtered].sort((a, b) => PRIO[b.priority] - PRIO[a.priority]);
+  else filtered = [...filtered].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  const fs = fieldStyle(dark);
   return (
     <div>
-      <PageHeader dark={dark} title="My Feedback" sub={`${items.length} submission${items.length === 1 ? "" : "s"}`} />
-      {items.length === 0 ? <EmptyState dark={dark} text="No feedback yet" sub="Submit your first piece of feedback to see it here." /> : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{items.map((f) => <FeedbackRow key={f.id} f={f} dark={dark} onClick={() => setSelected(f)} />)}</div>
-      )}
+      <PageHeader dark={dark} title="My Feedback" sub={`${filtered.length} of ${items.length} submission${items.length === 1 ? "" : "s"}`} right={
+        <Button size="sm" icon={Send} onClick={() => pushToast({ title: "Tip: use Submit Feedback in the sidebar to add new items." })}>How to add</Button>
+      } />
+      {/* Search + Filter bar */}
+      <Card dark={dark} style={{ marginBottom: 14 }}>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+          <div style={{ position: "relative", flex: 1, minWidth: 180 }}>
+            <Search size={14} style={{ position: "absolute", left: 10, top: 10, color: "#8890A4" }} />
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search your feedback…" style={{ ...fs, width: "100%", paddingLeft: 30, boxSizing: "border-box" }} />
+          </div>
+          <select style={fs} value={statusF} onChange={(e) => setStatusF(e.target.value)}>
+            <option value="">All status</option>
+            {Object.entries(statusLabel).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+          </select>
+          <select style={fs} value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+            <option value="priority">By priority</option>
+          </select>
+        </div>
+      </Card>
+      {items.length === 0
+        ? <EmptyState dark={dark} text="No feedback yet" sub="Submit your first piece of feedback to see it here." />
+        : filtered.length === 0
+          ? <EmptyState dark={dark} text="No matches" sub="Try clearing your search or filter." icon={Search} />
+          : <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{filtered.map((f) => <FeedbackRow key={f.id} f={f} dark={dark} onClick={() => setSelected(f)} />)}</div>
+      }
       {selected && <FeedbackDetailModal f={selected} session={session} dark={dark} onClose={() => setSelected(null)} onDelete={withdraw} isAdmin={false} />}
     </div>
   );
@@ -866,11 +927,25 @@ function MyFeedback({ session, dark, pushToast, refreshKey, bumpRefresh }) {
 function StudentProfile({ session, dark, pushToast, onUpdated }) {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({ name: session.name, department: session.department, year: String(session.year || 1) });
+  const [pwForm, setPwForm] = useState({ current: "", newPw: "", confirm: "" });
+  const [pwErr, setPwErr] = useState(""); const [pwLoading, setPwLoading] = useState(false);
   const save = async () => {
     const res = await api("/api/me", { method: "PATCH", body: { name: form.name, department: form.department, year: Number(form.year) } });
     if (res.ok) { onUpdated(res.data); pushToast({ title: "Profile updated" }); setEditing(false); }
     else pushToast({ title: "Couldn't update profile", desc: res.error, type: "error" });
   };
+  const changePw = async (e) => {
+    e.preventDefault(); setPwErr("");
+    if (pwForm.newPw.length < 6) return setPwErr("New password must be at least 6 characters.");
+    if (pwForm.newPw !== pwForm.confirm) return setPwErr("Passwords do not match.");
+    setPwLoading(true);
+    const res = await api("/api/me/password", { method: "POST", body: { current: pwForm.current, newPassword: pwForm.newPw } });
+    setPwLoading(false);
+    if (res.ok) { setPwForm({ current: "", newPw: "", confirm: "" }); pushToast({ title: "Password changed successfully", type: "success" }); }
+    else setPwErr(res.error || "Failed to change password.");
+  };
+  const pwStrength = pwForm.newPw.length === 0 ? null : pwForm.newPw.length < 6 ? "weak" : pwForm.newPw.length < 10 ? "medium" : "strong";
+  const pwColor = { weak: palette.red, medium: palette.amber, strong: palette.green }[pwStrength] || "transparent";
   return (
     <div style={{ maxWidth: 560 }}>
       <PageHeader dark={dark} title="Profile" right={!editing && <Button size="sm" variant="ghost" onClick={() => { setForm({ name: session.name, department: session.department, year: String(session.year || 1) }); setEditing(true); }}>Edit profile</Button>} />
@@ -894,6 +969,31 @@ function StudentProfile({ session, dark, pushToast, onUpdated }) {
             <div><div style={{ fontSize: 11, color: "#8B93A7", fontWeight: 700 }}>YEAR</div><div style={{ marginTop: 4 }}>Year {session.year}</div></div>
           </div>
         )}
+      </Card>
+
+      {/* ── Change Password ── */}
+      <Card dark={dark} style={{ marginTop: 18 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+          <KeyRound size={16} color={palette.blue} />
+          <div style={{ fontWeight: 700, fontSize: 15 }}>Change Password</div>
+        </div>
+        <form onSubmit={changePw}>
+          <Field label="Current Password"><input type="password" style={inputStyle} value={pwForm.current} onChange={(e) => setPwForm((p) => ({ ...p, current: e.target.value }))} placeholder="••••••••" /></Field>
+          <Field label="New Password">
+            <input type="password" style={inputStyle} value={pwForm.newPw} onChange={(e) => setPwForm((p) => ({ ...p, newPw: e.target.value }))} placeholder="Min. 6 characters" />
+            {pwStrength && (
+              <div style={{ marginTop: 5, display: "flex", alignItems: "center", gap: 6 }}>
+                <div style={{ flex: 1, height: 3, borderRadius: 99, background: dark ? "#333" : "#E4E7F1", overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: pwStrength === "weak" ? "30%" : pwStrength === "medium" ? "65%" : "100%", background: pwColor, transition: "width .3s, background .3s" }} />
+                </div>
+                <span style={{ fontSize: 10.5, fontWeight: 600, color: pwColor, textTransform: "capitalize" }}>{pwStrength}</span>
+              </div>
+            )}
+          </Field>
+          <Field label="Confirm New Password"><input type="password" style={inputStyle} value={pwForm.confirm} onChange={(e) => setPwForm((p) => ({ ...p, confirm: e.target.value }))} placeholder="••••••••" /></Field>
+          {pwErr && <div style={{ background: "#FDE9EC", color: "#B4223A", padding: "9px 12px", borderRadius: 9, fontSize: 13, marginBottom: 14 }}>{pwErr}</div>}
+          <Button type="submit" size="sm" icon={KeyRound} disabled={pwLoading}>{pwLoading ? "Updating…" : "Update Password"}</Button>
+        </form>
       </Card>
     </div>
   );
@@ -963,9 +1063,27 @@ function AdminFeedback({ session, dark, pushToast, refreshKey, bumpRefresh }) {
     else pushToast({ title: "Couldn't delete", desc: res.error, type: "error" });
   };
 
+  const exportCSV = () => {
+    const header = ["Title", "Category", "Cluster", "Sentiment", "Priority", "Status", "Student", "Date"].join(",");
+    const rows = filtered.map((f) => [
+      `"${(f.title || "").replace(/"/g, '""')}"`,
+      f.category, f.clusterId, f.sentiment, f.priority, f.status,
+      `"${(f.studentName || "").replace(/"/g, '""')}"`,
+      new Date(f.createdAt).toISOString().slice(0, 10),
+    ].join(","));
+    const csv = [header, ...rows].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = `pypirates-feedback-${Date.now()}.csv`; a.click();
+    URL.revokeObjectURL(url);
+    pushToast({ title: `Exported ${filtered.length} rows to CSV` });
+  };
+
   return (
     <div>
-      <PageHeader dark={dark} title="Feedback Management" sub={`${filtered.length} of ${items.length} items`} />
+      <PageHeader dark={dark} title="Feedback Management" sub={`${filtered.length} of ${items.length} items`} right={
+        <Button size="sm" variant="ghost" icon={Download} onClick={exportCSV}>Export CSV</Button>
+      } />
       <Card dark={dark} style={{ marginBottom: 16 }}>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
           <div style={{ position: "relative", flex: 1, minWidth: 200 }}>
