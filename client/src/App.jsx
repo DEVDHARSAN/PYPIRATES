@@ -750,28 +750,133 @@ function Shell({ session, route, go, logout, theme, toggleTheme, children, onSim
 }
 
 /* ---------------------------- Feedback detail modal ------------------------- */
-function FeedbackDetailModal({ f, session, dark, onClose, onUpdateStatus, onDelete, isAdmin }) {
+function FeedbackDetailModal({ f: fProp, session, dark, onClose, onUpdateStatus, onUpdatePriority, onDelete, onEdited, isAdmin }) {
+  const [f, setF] = useState(fProp);
+  const [editing, setEditing] = useState(false);
+  const [editForm, setEditForm] = useState({ title: fProp.title, description: fProp.description, category: fProp.category });
+  const [editLoading, setEditLoading] = useState(false); const [editErr, setEditErr] = useState("");
   const isOwner = f.userId === session.id;
   const canWithdraw = !isAdmin && isOwner && f.status === "SUBMITTED";
+  const canEdit = !isAdmin && isOwner && f.status === "SUBMITTED";
+
+  const saveEdit = async () => {
+    setEditErr(""); setEditLoading(true);
+    const res = await api(`/api/feedback/${f.id}`, { method: "PATCH", body: editForm });
+    setEditLoading(false);
+    if (res.ok) { const updated = { ...f, ...res.data }; setF(updated); onEdited?.(updated); setEditing(false); }
+    else setEditErr(res.error || "Failed to update.");
+  };
+
+  const downloadReceipt = () => {
+    const lines = [
+      "PYPIRATES — Feedback Receipt",
+      "=".repeat(40),
+      `ID:          ${f.id}`,
+      `Date:        ${new Date(f.createdAt).toLocaleString()}`,
+      `Title:       ${f.title}`,
+      `Category:    ${f.category}`,
+      `Cluster:     ${f.clusterId}`,
+      `Sentiment:   ${f.sentiment}`,
+      `Priority:    ${f.priority}`,
+      `Status:      ${f.status}`,
+      "",
+      "Description:",
+      f.description,
+      "",
+      "=".repeat(40),
+      "Keep this receipt for your records.",
+    ].join("\n");
+    const blob = new Blob([lines], { type: "text/plain" });
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+    a.download = `feedback-receipt-${f.id.slice(0,8)}.txt`; a.click();
+  };
+
+  const fs = fieldStyle(dark);
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 85, display: "flex", justifyContent: "flex-end" }} onClick={onClose}>
-      <div style={{ width: 440, maxWidth: "92vw", height: "100%", background: dark ? palette.surface : "#fff", padding: 26, overflowY: "auto", animation: "slideIn .2s ease" }} onClick={(e) => e.stopPropagation()}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}><div style={{ fontWeight: 700, fontSize: 17, maxWidth: 340 }}>{f.title}</div><X size={18} style={{ cursor: "pointer", flexShrink: 0 }} onClick={onClose} /></div>
-        <div style={{ fontSize: 12, color: dark ? "#8B93A7" : "#6B7288", marginTop: 6 }}>{isAdmin ? f.studentName : "Submitted by you"} • {new Date(f.createdAt).toISOString().slice(0, 10)}</div>
-        <div style={{ fontSize: 13.5, lineHeight: 1.6, marginTop: 16, color: dark ? "#C7CCE0" : "#333A4D" }}>{f.description}</div>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 18 }}>
-          <Badge color={sentimentColor(f.sentiment)} subtle>{f.sentiment}</Badge><Badge color={priorityColor(f.priority)} subtle>{f.priority}</Badge><Badge color={palette.blue} subtle>{f.category}</Badge>
+      <div style={{ width: 460, maxWidth: "92vw", height: "100%", background: dark ? palette.surface : "#fff", padding: 26, overflowY: "auto", animation: "slideIn .2s ease" }} onClick={(e) => e.stopPropagation()}>
+
+        {/* Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
+          <div style={{ fontWeight: 700, fontSize: 17, maxWidth: 370, lineHeight: 1.3 }}>{f.title}</div>
+          <X size={18} style={{ cursor: "pointer", flexShrink: 0, marginLeft: 8 }} onClick={onClose} />
         </div>
+        <div style={{ fontSize: 12, color: dark ? "#8B93A7" : "#6B7288", marginBottom: 14 }}>
+          {isAdmin ? f.studentName : "Submitted by you"} • {new Date(f.createdAt).toISOString().slice(0, 10)}
+        </div>
+
+        {/* Edit form or description view */}
+        {editing ? (
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ marginBottom: 10 }}>
+              <div style={{ fontSize: 11.5, fontWeight: 700, color: "#8B93A7", marginBottom: 5 }}>TITLE</div>
+              <input style={{ ...fs, width: "100%", boxSizing: "border-box" }} value={editForm.title} onChange={(e) => setEditForm((f) => ({ ...f, title: e.target.value }))} maxLength={120} />
+            </div>
+            <div style={{ marginBottom: 10 }}>
+              <div style={{ fontSize: 11.5, fontWeight: 700, color: "#8B93A7", marginBottom: 5 }}>DESCRIPTION</div>
+              <textarea style={{ ...fs, width: "100%", boxSizing: "border-box", minHeight: 110, resize: "vertical" }} value={editForm.description} onChange={(e) => setEditForm((f) => ({ ...f, description: e.target.value }))} maxLength={800} />
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 11.5, fontWeight: 700, color: "#8B93A7", marginBottom: 5 }}>CATEGORY</div>
+              <select style={{ ...fs, width: "100%", boxSizing: "border-box" }} value={editForm.category} onChange={(e) => setEditForm((f) => ({ ...f, category: e.target.value }))}>
+                {["Academics","Infrastructure","Hostel","Transport","Food","Faculty","Examination","Library","Fees","Technology","Campus Life","Other"].map((c) => <option key={c}>{c}</option>)}
+              </select>
+            </div>
+            {editErr && <div style={{ background: "#FDE9EC", color: "#B4223A", padding: "9px 12px", borderRadius: 8, fontSize: 13, marginBottom: 10 }}>{editErr}</div>}
+            <div style={{ display: "flex", gap: 8 }}>
+              <Button size="sm" onClick={saveEdit} disabled={editLoading}>{editLoading ? "Saving…" : "Save changes"}</Button>
+              <Button size="sm" variant="ghost" onClick={() => { setEditing(false); setEditErr(""); }}>Cancel</Button>
+            </div>
+          </div>
+        ) : (
+          <div style={{ fontSize: 13.5, lineHeight: 1.7, color: dark ? "#C7CCE0" : "#333A4D", marginBottom: 16 }}>{f.description}</div>
+        )}
+
+        {/* Badges */}
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 18 }}>
+          <Badge color={sentimentColor(f.sentiment)} subtle>{f.sentiment}</Badge>
+          <Badge color={priorityColor(f.priority)} subtle>{f.priority}</Badge>
+          <Badge color={palette.blue} subtle>{f.category}</Badge>
+        </div>
+
         <StatusTimeline status={f.status} dark={dark} />
+
+        {/* Admin controls */}
         {isAdmin && onUpdateStatus && (
-          <div style={{ marginBottom: 6 }}>
-            <div style={{ fontSize: 11.5, fontWeight: 700, color: "#8B93A7", marginBottom: 6 }}>UPDATE STATUS</div>
-            <select value={f.status} onChange={(e) => onUpdateStatus(f.id, e.target.value)} style={{ ...fieldStyle(dark), width: "100%", boxSizing: "border-box" }}>{Object.keys(statusLabel).map((s) => <option key={s} value={s}>{statusLabel[s]}</option>)}</select>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 6 }}>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#8B93A7", marginBottom: 5 }}>STATUS</div>
+              <select value={f.status} onChange={(e) => { onUpdateStatus(f.id, e.target.value); setF((p) => ({ ...p, status: e.target.value })); }} style={{ ...fs, width: "100%", boxSizing: "border-box" }}>
+                {Object.keys(statusLabel).map((s) => <option key={s} value={s}>{statusLabel[s]}</option>)}
+              </select>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#8B93A7", marginBottom: 5 }}>PRIORITY OVERRIDE</div>
+              <select value={f.priority} onChange={(e) => { onUpdatePriority?.(f.id, e.target.value); setF((p) => ({ ...p, priority: e.target.value })); }} style={{ ...fs, width: "100%", boxSizing: "border-box" }}>
+                {["LOW","MEDIUM","HIGH","CRITICAL"].map((p) => <option key={p}>{p}</option>)}
+              </select>
+            </div>
           </div>
         )}
+
+        {/* Student action buttons */}
+        {!isAdmin && (
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 18, borderTop: `1px solid ${dark ? palette.line : "#EEF0F6"}`, paddingTop: 16 }}>
+            {canEdit && !editing && (
+              <Button size="sm" variant="ghost" icon={ClipboardList} onClick={() => { setEditForm({ title: f.title, description: f.description, category: f.category }); setEditing(true); }}>
+                Edit feedback
+              </Button>
+            )}
+            <Button size="sm" variant="ghost" icon={Download} onClick={downloadReceipt}>Download receipt</Button>
+          </div>
+        )}
+
+        {/* Delete / Withdraw */}
         {(isAdmin || canWithdraw) && onDelete && (
-          <div style={{ marginTop: 24, borderTop: `1px solid ${dark ? palette.line : "#EEF0F6"}`, paddingTop: 16 }}>
-            <Button variant="danger" size="sm" icon={Trash2} onClick={() => onDelete(f.id)}>{isAdmin ? "Delete feedback" : "Withdraw feedback"}</Button>
+          <div style={{ marginTop: 18, borderTop: `1px solid ${dark ? palette.line : "#EEF0F6"}`, paddingTop: 16 }}>
+            <Button variant="danger" size="sm" icon={Trash2} onClick={() => onDelete(f.id)}>
+              {isAdmin ? "Delete feedback" : "Withdraw feedback"}
+            </Button>
           </div>
         )}
       </div>
@@ -788,12 +893,45 @@ function StudentDashboard({ session, dark, go, refreshKey }) {
   const counts = { SUBMITTED: 0, UNDER_REVIEW: 0, IN_PROGRESS: 0, RESOLVED: 0 };
   items.forEach((f) => counts[f.status]++);
   const stats = [{ l: "Submitted", v: items.length, c: palette.blue }, { l: "Under Review", v: counts.UNDER_REVIEW, c: palette.amber }, { l: "In Progress", v: counts.IN_PROGRESS, c: palette.violet }, { l: "Resolved", v: counts.RESOLVED, c: palette.green }];
+  const resolvePct = items.length > 0 ? Math.round((counts.RESOLVED / items.length) * 100) : 0;
+  const active = items.filter((f) => f.status !== "RESOLVED").length;
+
   return (
     <div>
       <PageHeader dark={dark} title={`Good to see you, ${session.name.split(" ")[0]}`} sub="Your voice helps improve campus life." />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 22 }} className="grid-4-r">
         {stats.map((s) => <Card key={s.l} dark={dark}><div style={{ fontSize: 12.5, color: dark ? "#8B93A7" : "#6B7288", fontWeight: 600 }}>{s.l}</div><div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 28, fontWeight: 700, marginTop: 6, color: s.c }}><CountUp value={s.v} /></div></Card>)}
       </div>
+
+      {/* Resolution Progress */}
+      {items.length > 0 && (
+        <Card dark={dark} style={{ marginBottom: 22 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 14 }}>Resolution Progress</div>
+              <div style={{ fontSize: 12.5, color: dark ? "#8B93A7" : "#6B7288", marginTop: 2 }}>
+                {counts.RESOLVED} of {items.length} issue{items.length !== 1 ? "s" : ""} resolved
+                {active > 0 && <span style={{ marginLeft: 10, color: palette.amber }}>• {active} still active</span>}
+              </div>
+            </div>
+            <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 24, fontWeight: 800, color: resolvePct === 100 ? palette.green : resolvePct > 50 ? palette.amber : palette.blue }}>
+              {resolvePct}%
+            </div>
+          </div>
+          <div style={{ height: 10, borderRadius: 99, background: dark ? "#1E2440" : "#E8EBFA", overflow: "hidden" }}>
+            <div style={{ height: "100%", width: `${resolvePct}%`, borderRadius: 99, background: resolvePct === 100 ? palette.green : `linear-gradient(90deg, ${palette.blue}, ${palette.violet})`, transition: "width 1s ease" }} />
+          </div>
+          <div style={{ display: "flex", gap: 16, marginTop: 12, flexWrap: "wrap" }}>
+            {[["UNDER_REVIEW", "Under Review", palette.amber], ["IN_PROGRESS", "In Progress", palette.violet], ["RESOLVED", "Resolved", palette.green]].map(([k, label, color]) => (
+              <div key={k} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5 }}>
+                <div style={{ width: 8, height: 8, borderRadius: "50%", background: color }} />
+                <span style={{ color: dark ? "#8B93A7" : "#6B7288" }}>{label}: <strong style={{ color }}>{counts[k]}</strong></span>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
       <Card dark={dark} style={{ marginBottom: 22, background: `linear-gradient(135deg, ${palette.blue}15, ${palette.violet}15)`, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 14 }}>
         <div><div style={{ fontWeight: 700, fontSize: 16 }}>Have a concern about campus life?</div><div style={{ fontSize: 13, color: dark ? "#9AA3B8" : "#6B7288", marginTop: 3 }}>Submit it and our AI clustering engine will route it instantly.</div></div>
         <Button icon={Send} onClick={() => go("student-new")}>Submit New Feedback</Button>
@@ -802,7 +940,7 @@ function StudentDashboard({ session, dark, go, refreshKey }) {
       {items.length === 0 ? <EmptyState dark={dark} text="No feedback yet" sub="Your submitted feedback will appear here." /> : (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{items.slice(0, 5).map((f) => <FeedbackRow key={f.id} f={f} dark={dark} onClick={() => setSelected(f)} />)}</div>
       )}
-      {selected && <FeedbackDetailModal f={selected} session={session} dark={dark} onClose={() => setSelected(null)} isAdmin={false} />}
+      {selected && <FeedbackDetailModal f={selected} session={session} dark={dark} onClose={() => setSelected(null)} onEdited={(u) => setItems((its) => its.map((i) => i.id === u.id ? u : i))} isAdmin={false} />}
     </div>
   );
 }
@@ -1063,6 +1201,8 @@ function AdminFeedback({ session, dark, pushToast, refreshKey, bumpRefresh }) {
   const [items, setItems] = useState(null);
   const [q, setQ] = useState(""); const [catF, setCatF] = useState(""); const [sentF, setSentF] = useState(""); const [prF, setPrF] = useState(""); const [stF, setStF] = useState("");
   const [selected, setSelected] = useState(null); const [page, setPage] = useState(1);
+  const [checked, setChecked] = useState(new Set()); const [bulkStatus, setBulkStatus] = useState("UNDER_REVIEW");
+  const [bulkLoading, setBulkLoading] = useState(false);
   const pageSize = 8;
   useEffect(() => { api("/api/admin/feedback").then((r) => setItems(r.ok ? r.data : [])); }, [refreshKey]);
   if (items === null) return <LoadingBlock dark={dark} />;
@@ -1075,8 +1215,13 @@ function AdminFeedback({ session, dark, pushToast, refreshKey, bumpRefresh }) {
 
   const updateStatus = async (id, status) => {
     const res = await api(`/api/admin/feedback/${id}/status`, { method: "PATCH", body: { status } });
-    if (res.ok) { setItems((its) => its.map((f) => (f.id === id ? { ...f, status } : f))); pushToast({ title: "Feedback status updated" }); if (selected?.id === id) setSelected((s) => ({ ...s, status })); }
+    if (res.ok) { setItems((its) => its.map((f) => (f.id === id ? { ...f, status } : f))); pushToast({ title: "Status updated" }); }
     else pushToast({ title: "Couldn't update status", desc: res.error, type: "error" });
+  };
+  const updatePriority = async (id, priority) => {
+    const res = await api(`/api/admin/feedback/${id}/priority`, { method: "PATCH", body: { priority } });
+    if (res.ok) { setItems((its) => its.map((f) => (f.id === id ? { ...f, priority } : f))); pushToast({ title: "Priority updated" }); }
+    else pushToast({ title: "Couldn't update priority", desc: res.error, type: "error" });
   };
   const deleteItem = async (id) => {
     if (!window.confirm("Delete this feedback permanently? This can't be undone.")) return;
@@ -1084,7 +1229,17 @@ function AdminFeedback({ session, dark, pushToast, refreshKey, bumpRefresh }) {
     if (res.ok) { setItems((its) => its.filter((f) => f.id !== id)); setSelected(null); pushToast({ title: "Feedback deleted" }); }
     else pushToast({ title: "Couldn't delete", desc: res.error, type: "error" });
   };
-
+  const applyBulk = async () => {
+    if (checked.size === 0) return;
+    setBulkLoading(true);
+    const res = await api("/api/admin/feedback/bulk", { method: "POST", body: { ids: [...checked], status: bulkStatus } });
+    setBulkLoading(false);
+    if (res.ok) {
+      setItems((its) => its.map((f) => (checked.has(f.id) ? { ...f, status: bulkStatus } : f)));
+      pushToast({ title: `${checked.size} items updated to ${statusLabel[bulkStatus]}` });
+      setChecked(new Set());
+    } else pushToast({ title: "Bulk update failed", desc: res.error, type: "error" });
+  };
   const exportCSV = () => {
     const header = ["Title", "Category", "Cluster", "Sentiment", "Priority", "Status", "Student", "Date"].join(",");
     const rows = filtered.map((f) => [
@@ -1100,12 +1255,32 @@ function AdminFeedback({ session, dark, pushToast, refreshKey, bumpRefresh }) {
     URL.revokeObjectURL(url);
     pushToast({ title: `Exported ${filtered.length} rows to CSV` });
   };
+  const toggleCheck = (id) => setChecked((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const allPageChecked = paged.length > 0 && paged.every((f) => checked.has(f.id));
+  const toggleAll = () => {
+    if (allPageChecked) setChecked((s) => { const n = new Set(s); paged.forEach((f) => n.delete(f.id)); return n; });
+    else setChecked((s) => { const n = new Set(s); paged.forEach((f) => n.add(f.id)); return n; });
+  };
 
   return (
     <div>
       <PageHeader dark={dark} title="Feedback Management" sub={`${filtered.length} of ${items.length} items`} right={
         <Button size="sm" variant="ghost" icon={Download} onClick={exportCSV}>Export CSV</Button>
       } />
+
+      {/* Bulk action bar */}
+      {checked.size > 0 && (
+        <div style={{ background: `linear-gradient(135deg, ${palette.blue}22, ${palette.violet}22)`, border: `1px solid ${palette.blue}55`, borderRadius: 12, padding: "12px 16px", marginBottom: 14, display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+          <span style={{ fontWeight: 700, fontSize: 13, color: palette.blue }}>{checked.size} selected</span>
+          <div style={{ flex: 1 }} />
+          <select style={{ ...selStyle, minWidth: 160 }} value={bulkStatus} onChange={(e) => setBulkStatus(e.target.value)}>
+            {Object.entries(statusLabel).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+          </select>
+          <Button size="sm" onClick={applyBulk} disabled={bulkLoading}>{bulkLoading ? "Applying…" : "Apply to all"}</Button>
+          <Button size="sm" variant="ghost" onClick={() => setChecked(new Set())}>Deselect all</Button>
+        </div>
+      )}
+
       <Card dark={dark} style={{ marginBottom: 16 }}>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
           <div style={{ position: "relative", flex: 1, minWidth: 200 }}>
@@ -1118,9 +1293,22 @@ function AdminFeedback({ session, dark, pushToast, refreshKey, bumpRefresh }) {
           <select style={selStyle} value={stF} onChange={(e) => { setStF(e.target.value); setPage(1); }}><option value="">All status</option>{Object.keys(statusLabel).map((s) => <option key={s} value={s}>{statusLabel[s]}</option>)}</select>
         </div>
       </Card>
+
       {filtered.length === 0 ? <EmptyState dark={dark} text="No matching feedback" sub="Try adjusting your search or filters." icon={Search} /> : (
         <>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>{paged.map((f) => <FeedbackRow key={f.id} f={f} dark={dark} onClick={() => setSelected(f)} />)}</div>
+          {/* Select-all row */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 14px", fontSize: 12, color: dark ? "#8B93A7" : "#6B7288", marginBottom: 4 }}>
+            <input type="checkbox" checked={allPageChecked} onChange={toggleAll} style={{ cursor: "pointer" }} />
+            <span>Select all on this page ({paged.length})</span>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {paged.map((f) => (
+              <div key={f.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <input type="checkbox" checked={checked.has(f.id)} onChange={() => toggleCheck(f.id)} style={{ cursor: "pointer", flexShrink: 0 }} />
+                <div style={{ flex: 1 }}><FeedbackRow f={f} dark={dark} onClick={() => setSelected(f)} /></div>
+              </div>
+            ))}
+          </div>
           <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 18, alignItems: "center" }}>
             <Button size="sm" variant="ghost" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>Previous</Button>
             <span style={{ fontSize: 12.5, color: dark ? "#8B93A7" : "#6B7288" }}>Page {page} of {totalPages}</span>
@@ -1128,10 +1316,11 @@ function AdminFeedback({ session, dark, pushToast, refreshKey, bumpRefresh }) {
           </div>
         </>
       )}
-      {selected && <FeedbackDetailModal f={selected} session={session} dark={dark} onClose={() => setSelected(null)} onUpdateStatus={updateStatus} onDelete={deleteItem} isAdmin />}
+      {selected && <FeedbackDetailModal f={selected} session={session} dark={dark} onClose={() => setSelected(null)} onUpdateStatus={updateStatus} onUpdatePriority={updatePriority} onDelete={deleteItem} isAdmin />}
     </div>
   );
 }
+
 
 function AdminClusters({ dark, go, refreshKey }) {
   const [clusters, setClusters] = useState(null);

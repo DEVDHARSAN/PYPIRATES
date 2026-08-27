@@ -126,6 +126,22 @@ app.delete("/api/feedback/:id", requireAuth, async (req, res) => {
   res.json({ success: true });
 });
 
+// STUDENT can edit their own SUBMITTED feedback (title, description, category)
+app.patch("/api/feedback/:id", requireRole("STUDENT"), async (req, res) => {
+  const { title, description, category } = req.body || {};
+  const item = await prisma.feedback.findUnique({ where: { id: req.params.id } });
+  if (!item) return res.status(404).json({ success: false, error: "Feedback not found" });
+  if (item.userId !== req.user.id) return res.status(403).json({ success: false, error: "Access denied" });
+  if (item.status !== "SUBMITTED") return res.status(400).json({ success: false, error: "Only SUBMITTED feedback can be edited" });
+  if (!title?.trim() || !description?.trim() || !category) return res.status(400).json({ success: false, error: "Title, description and category are required" });
+  const cls = classifyFeedback(title.trim(), description.trim());
+  const updated = await prisma.feedback.update({
+    where: { id: req.params.id },
+    data: { title: title.trim(), description: description.trim(), category, sentiment: cls.sentiment, priority: cls.priority, clusterId: cls.clusterId },
+  });
+  res.json({ success: true, data: updated });
+});
+
 /* ---------------------------- Admin ---------------------------- */
 app.get("/api/admin/feedback", requireRole("ADMIN"), async (req, res) => {
   const items = await prisma.feedback.findMany({ include: { user: true }, orderBy: { createdAt: "desc" } });
@@ -143,6 +159,24 @@ app.patch("/api/admin/feedback/:id/status", requireRole("ADMIN"), async (req, re
   const item = await prisma.feedback.update({ where: { id: req.params.id }, data: { status } }).catch(() => null);
   if (!item) return res.status(404).json({ success: false, error: "Feedback not found" });
   res.json({ success: true, data: item });
+});
+
+// Admin: override AI-assigned priority
+app.patch("/api/admin/feedback/:id/priority", requireRole("ADMIN"), async (req, res) => {
+  const { priority } = req.body || {};
+  if (!["LOW", "MEDIUM", "HIGH", "CRITICAL"].includes(priority)) return res.status(400).json({ success: false, error: "Invalid priority" });
+  const item = await prisma.feedback.update({ where: { id: req.params.id }, data: { priority } }).catch(() => null);
+  if (!item) return res.status(404).json({ success: false, error: "Feedback not found" });
+  res.json({ success: true, data: item });
+});
+
+// Admin: bulk update status on multiple feedback items
+app.post("/api/admin/feedback/bulk", requireRole("ADMIN"), async (req, res) => {
+  const { ids, status } = req.body || {};
+  if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ success: false, error: "ids array required" });
+  if (!STATUS_ORDER.includes(status)) return res.status(400).json({ success: false, error: "Invalid status" });
+  await prisma.feedback.updateMany({ where: { id: { in: ids } }, data: { status } });
+  res.json({ success: true, updated: ids.length });
 });
 
 app.get("/api/admin/clusters", requireRole("ADMIN"), async (req, res) => {
